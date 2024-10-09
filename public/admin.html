@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin CMS - Kartu Ucapan Ulang Tahun</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+        }
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #preview {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin CMS - Kartu Ucapan Ulang Tahun</h1>
+    <form id="updateForm">
+        <input type="text" id="name" placeholder="Nama">
+        <textarea id="message" placeholder="Pesan Ucapan"></textarea>
+        <input type="file" id="image" accept="image/*">
+        <button type="submit">Perbarui</button>
+    </form>
+    <div id="preview">
+        <h2>Preview:</h2>
+        <img id="previewImage" src="/api/placeholder/150/150" alt="Preview" style="max-width: 150px;">
+        <p id="previewName"></p>
+        <p id="previewMessage"></p>
+    </div>
+
+    <script>
+        const form = document.getElementById('updateForm');
+        const previewImage = document.getElementById('previewImage');
+        const previewName = document.getElementById('previewName');
+        const previewMessage = document.getElementById('previewMessage');
+
+        // Load initial data
+        fetch('/api/birthday-data')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('name').value = data.name;
+                document.getElementById('message').value = data.message;
+                previewImage.src = data.imagePath;
+                previewName.textContent = data.name;
+                previewMessage.textContent = data.message;
+            });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('message', document.getElementById('message').value);
+            
+            const imageFile = document.getElementById('image').files[0];
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            try {
+                const response = await fetch('/api/update-birthday-data', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        message: formData.get('message')
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (imageFile) {
+                    const imageResponse = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    // const imageData = await imageResponse.json();
+                    // if (imageData.success) {
+                    //     previewImage.src = imageData.imagePath;
+                    // }
+                }
+
+                previewName.textContent = formData.get('name');
+                previewMessage.textContent = formData.get('message');
+
+                alert('Data berhasil diperbarui!');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memperbarui data.');
+            }
+        });
+    </script>
+</body>
+</html>
